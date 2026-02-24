@@ -2,6 +2,18 @@
 
 All notable changes to Eczema Tracker will be documented here.
 
+## [1.2.0] - 2026-02-24
+
+### Added
+- `start.command` — double-clickable macOS launcher; opens in Terminal automatically via Finder
+- Node.js detection across PATH, Homebrew (Intel + Apple Silicon), and nvm installs
+- Auto-installs npm dependencies on first launch if `node_modules` is missing
+- Auto-builds frontend on first launch if `dist` is missing
+- Opens `http://localhost:3001` in the browser automatically after server starts
+- Friendly error message with install instructions if Node.js is not found
+
+---
+
 ## [1.1.0] - 2026-02-24
 
 ### Added
