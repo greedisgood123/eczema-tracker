@@ -79,6 +79,7 @@ const emptyEntry = () => ({
   suhoorMeal: "",
   iftarMeal: "",
   notes: "",
+  photos: [],
   timestamp: null,
 });
 
@@ -143,6 +144,27 @@ export default function EczemaTracker() {
     const existing = await loadDay(d);
     setEntry(existing || emptyEntry());
     setView("log");
+  };
+
+  const handleUploadPhoto = async (file) => {
+    const form = new FormData();
+    form.append("photo", file);
+    const res = await fetch(`/api/day/${currentDay}/photo`, { method: "POST", body: form });
+    const { filename } = await res.json();
+    setEntry(p => ({ ...p, photos: [...(p.photos || []), filename] }));
+    setAllDays(prev => {
+      const day = prev[String(currentDay)] || {};
+      return { ...prev, [String(currentDay)]: { ...day, photos: [...(day.photos || []), filename] } };
+    });
+  };
+
+  const handleDeletePhoto = async (filename) => {
+    await fetch(`/api/day/${currentDay}/photo/${filename}`, { method: "DELETE" });
+    setEntry(p => ({ ...p, photos: (p.photos || []).filter(f => f !== filename) }));
+    setAllDays(prev => {
+      const day = prev[String(currentDay)] || {};
+      return { ...prev, [String(currentDay)]: { ...day, photos: (day.photos || []).filter(f => f !== filename) } };
+    });
   };
 
   const getCompletionCount = () =>
@@ -437,6 +459,23 @@ export default function EczemaTracker() {
                     </div>
                   </div>
                   {d.notes && <p style={{ fontSize: "12px", color: "#5a8b6a", margin: "8px 0 0", lineHeight: 1.5 }}>{d.notes.slice(0, 80)}{d.notes.length > 80 ? "..." : ""}</p>}
+                  {d.photos?.length > 0 && (
+                    <div style={{ display: "flex", gap: "4px", marginTop: "8px" }}>
+                      {d.photos.slice(0, 3).map(f => (
+                        <img key={f} src={`/photos/${f}`} style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 6 }} />
+                      ))}
+                      {d.photos.length > 3 && (
+                        <div style={{
+                          width: 40, height: 40, borderRadius: 6,
+                          background: "rgba(255,255,255,0.06)",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "11px", color: "#5a7b6a",
+                        }}>
+                          +{d.photos.length - 3}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -606,6 +645,52 @@ export default function EczemaTracker() {
                 rows={3}
                 style={textareaStyle}
               />
+            </Section>
+
+            {/* Photos */}
+            <Section title="Photos">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+                {(entry.photos || []).map(f => (
+                  <div key={f} style={{ position: "relative" }}>
+                    <img
+                      src={`/photos/${f}`}
+                      style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: 8, display: "block" }}
+                    />
+                    <button
+                      onClick={() => handleDeletePhoto(f)}
+                      style={{
+                        position: "absolute", top: "4px", right: "4px",
+                        width: "22px", height: "22px", borderRadius: "50%",
+                        background: "rgba(0,0,0,0.6)", border: "none",
+                        color: "#fff", fontSize: "13px", cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        lineHeight: 1, padding: 0,
+                      }}
+                    >×</button>
+                  </div>
+                ))}
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                id="photo-upload-input"
+                style={{ display: "none" }}
+                onChange={e => {
+                  if (e.target.files[0]) {
+                    handleUploadPhoto(e.target.files[0]);
+                    e.target.value = "";
+                  }
+                }}
+              />
+              <button
+                onClick={() => document.getElementById("photo-upload-input").click()}
+                style={{
+                  padding: "10px 16px", borderRadius: "10px",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  background: "rgba(255,255,255,0.04)",
+                  color: "#7a9b8a", fontSize: "13px", cursor: "pointer",
+                }}
+              >+ Add Photo</button>
             </Section>
 
             {/* Save button */}
